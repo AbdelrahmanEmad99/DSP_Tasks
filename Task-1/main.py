@@ -1,9 +1,9 @@
 import tkinter as tk
 import task2
+import task1
 
 def open_task1():
-    # Placeholder for task1
-    print("Task 1 not implemented yet")
+    task1.start_task()
 
 def open_task2():
     task2.start_task()
