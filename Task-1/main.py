@@ -1,12 +1,18 @@
 import tkinter as tk
+
+import task1
 import task2
+import task3
+
 
 def open_task1():
-    # Placeholder for task1
-    print("Task 1 not implemented yet")
+    task1.start_task()
 
 def open_task2():
     task2.start_task()
+
+def open_task3():
+    task3.start_task()
 
 # Main Application Window
 root = tk.Tk()
@@ -21,6 +27,9 @@ button1.pack(pady=10)
 
 button2 = tk.Button(root, text="Open Task 2 (Signal Generation)", command=open_task2, width=25, height=2)
 button2.pack(pady=10)
+
+button3 = tk.Button(root, text="Open Task 3 (Quantization)", command=open_task3, width=25, height=2)
+button3.pack(pady=10)
 
 # Run the main application loop
 root.mainloop()
