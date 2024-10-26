@@ -1,9 +1,8 @@
 import tkinter as tk
 
-import task1
 import task2
 import task3
-
+import task1
 
 def open_task1():
     task1.start_task()
