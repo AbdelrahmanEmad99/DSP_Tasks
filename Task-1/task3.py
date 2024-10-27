@@ -46,12 +46,69 @@ def QuantizationTest1(file_name, Your_EncodedValues, Your_QuantizedValues):
     print("QuantizationTest1 Test case passed successfully.")
 
 
+def QuantizationTest2(file_name, Your_IntervalIndices, Your_EncodedValues, Your_QuantizedValues, Your_SampledError):
+    expectedIntervalIndices = []
+    expectedEncodedValues = []
+    expectedQuantizedValues = []
+    expectedSampledError = []
+    with open(file_name, 'r') as f:
+        line = f.readline()
+        line = f.readline()
+        line = f.readline()
+        line = f.readline()
+        while line:
+            # process line
+            L = line.strip()
+            if len(L.split(' ')) == 4:
+                L = line.split(' ')
+                V1 = int(L[0])
+                V2 = str(L[1])
+                V3 = float(L[2])
+                V4 = float(L[3])
+                expectedIntervalIndices.append(V1)
+                expectedEncodedValues.append(V2)
+                expectedQuantizedValues.append(V3)
+                expectedSampledError.append(V4)
+                line = f.readline()
+            else:
+                break
+    if (len(Your_IntervalIndices) != len(expectedIntervalIndices)
+            or len(Your_EncodedValues) != len(expectedEncodedValues)
+            or len(Your_QuantizedValues) != len(expectedQuantizedValues)
+            or len(Your_SampledError) != len(expectedSampledError)):
+        print("QuantizationTest2 Test case failed, your signal have different length from the expected one")
+        return
+    for i in range(len(Your_IntervalIndices)):
+        if (Your_IntervalIndices[i] != expectedIntervalIndices[i]):
+            print("QuantizationTest2 Test case failed, your signal have different indicies from the expected one")
+            return
+    for i in range(len(Your_EncodedValues)):
+        if (Your_EncodedValues[i] != expectedEncodedValues[i]):
+            print(
+                "QuantizationTest2 Test case failed, your EncodedValues have different EncodedValues from the expected one")
+            return
+
+    for i in range(len(expectedQuantizedValues)):
+        if abs(Your_QuantizedValues[i] - expectedQuantizedValues[i]) < 0.01:
+            continue
+        else:
+            print(
+                "QuantizationTest2 Test case failed, your QuantizedValues have different values from the expected one")
+            return
+    for i in range(len(expectedSampledError)):
+        if abs(Your_SampledError[i] - expectedSampledError[i]) < 0.01:
+            continue
+        else:
+            print("QuantizationTest2 Test case failed, your SampledError have different values from the expected one")
+            return
+    print("QuantizationTest2 Test case passed successfully")
+
 def open_file():
     file_path = filedialog.askopenfilename(filetypes=[("Text Files", "*.txt")])
     file_path_label.config(text=file_path)
 
 
-def quantize_signal():
+def quantize_signal(run_test):
     try:
         num_bits = int(bits_entry.get()) if bits_entry.get() else None
         num_levels = int(levels_entry.get()) if levels_entry.get() else None
@@ -103,7 +160,7 @@ def quantize_signal():
                 level = num_levels - 1
 
             quantized_value = reconstruction_levels[level]
-            quantization_error = sample - quantized_value
+            quantization_error = quantized_value - sample
 
             if num_bits is not None:
                 encoded = format(level, f'0{num_bits}b')
@@ -114,18 +171,27 @@ def quantize_signal():
             encoded_values.append(encoded)
             quantization_errors.append(quantization_error)
 
+
+        intervalIndices = []
+        for v in encoded_values:
+            intervalIndices.append(int(v, 2) + 1)
+
         output_text.delete("1.0", "end")
         for i in range(len(encoded_values)):
-            output_text.insert("end", f"{encoded_values[i]} {quantized_values[i]:.2f}\n")
-
-        QuantizationTest1('Quan1_Out.txt', encoded_values, quantized_values)
+            output_text.insert("end", f"{intervalIndices[i]} {encoded_values[i]} {quantized_values[i]:.2f} {quantization_errors[i]:.3f}\n")
+        if run_test  == "test1":
+            QuantizationTest1('Quan1_Out.txt', encoded_values, quantized_values)
+        elif run_test == "test2":
+            QuantizationTest2('Quan2_Out.txt', intervalIndices , encoded_values, quantized_values, quantization_errors)
 
         # Calculate and display cumulative average power error
         N = len(signal_samples)
-        cumulative_errors = [(signal_samples[i] - quantized_values[i]) ** 2 for i in range(N)]
-        cumulative_avg_errors = [sum(cumulative_errors[:i+1]) / (i + 1) for i in range(N)]
+        cumulative_avg_error = 0
+        for i in range(N):
+            cumulative_avg_error += quantization_errors[i] ** 2
+        cumulative_avg_error /= N
 
-        output_text.insert("end", f"\nFinal Average Power Error: {cumulative_avg_errors[-1]:.4f}\n")
+        output_text.insert("end", f"\nFinal Average Power Error: {cumulative_avg_error:.8f}\n")
 
         plot_signals(signal_samples, quantized_values, quantization_errors)
 
@@ -136,10 +202,10 @@ def quantize_signal():
 def plot_signals(original, quantized, errors):
     plt.figure(figsize=(12, 8))
 
-    # Plot original and quantized signals
+    # Plot original and quantized signals with stairs for quantized
     plt.subplot(2, 1, 1)
     plt.plot(original, label='Original Signal', color='blue')
-    plt.plot(quantized, label='Quantized Signal', color='orange', linestyle='--')
+    plt.step(range(len(quantized)), quantized, label='Quantized Signal', color='orange', linestyle='--', where='mid')
     plt.title("Original vs Quantized Signal")
     plt.xlabel("Sample Index")
     plt.ylabel("Amplitude")
@@ -180,8 +246,11 @@ def start_task():
     file_path_label = tk.Label(input_frame, text="", fg="blue")
     file_path_label.grid(row=3, column=0, columnspan=2)
 
-    process_button = tk.Button(input_frame, text="Quantize Signal", command=quantize_signal)
-    process_button.grid(row=4, column=0, columnspan=2, pady=10)
+    test1_button = tk.Button(input_frame, text="Run Quantization Test 1", command=lambda: quantize_signal("test1"))
+    test1_button.grid(row=4, column=0, pady=10)
+
+    test2_button = tk.Button(input_frame, text="Run Quantization Test 2", command=lambda: quantize_signal("test2"))
+    test2_button.grid(row=4, column=1, pady=10)
 
     output_frame = tk.Frame(root)
     output_frame.pack(pady=10)
@@ -191,4 +260,3 @@ def start_task():
     output_text.grid(row=1, column=0, pady=5)
 
     root.mainloop()
-
