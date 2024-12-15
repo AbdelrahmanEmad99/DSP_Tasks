@@ -4,6 +4,8 @@ import task1
 import task2
 import task3
 import task4
+import task5
+
 
 def open_task1():
     task1.start_task()
@@ -16,6 +18,9 @@ def open_task3():
 
 def open_task4():
     task4.start_task()
+
+def open_task5():
+    task5.start_task()
 
 # Main Application Window
 root = tk.Tk()
@@ -36,6 +41,9 @@ button3.pack(pady=10)
 
 button4 = tk.Button(root, text="Open Task 4 (Convolution)", command=open_task4, width=25, height=2)
 button4.pack(pady=10)
+
+button5 = tk.Button(root, text="Fourier", command=open_task5, width=25, height=2)
+button5.pack(pady=10)
 
 # Run the main application loop
 root.mainloop()
